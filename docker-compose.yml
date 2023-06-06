@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  watchtower:
+    image: containrrr/watchtower:1.5.3
+    environment:
+      TZ: 'Europe/Berlin'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      # make this service to be ignored by traefik proxy
+      - "traefik.enable=false"
+      # do not update automatically by watchtower
+      - "com.centurylinklabs.watchtower.enable=false"
+    # act every 30 seconds
+    command: --interval 30
+    deploy:
+      replicas: 1
