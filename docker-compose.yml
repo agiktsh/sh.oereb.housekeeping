@@ -3,8 +3,14 @@ version: "3"
 services:
   watchtower:
     image: containrrr/watchtower:1.5.3
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "3"
     environment:
       TZ: 'Europe/Berlin'
+      WATCHTOWER_ROLLING_RESTART: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
@@ -16,3 +22,43 @@ services:
     command: --interval 30
     deploy:
       replicas: 1
+  log-gui:
+    image: amir20/dozzle:v4.10.19
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "5m"
+        max-file: "3"
+    environment:
+      - "TZ=Europe/Berlin"
+      - "DOZZLE_USERNAME=sh"
+      - "DOZZLE_PASSWORD=log-gui"
+      # - "DOZZLE_FILTER=name=mgdm2oerebapplicationintegration-ilivalidator-service-1"
+      # - "DOZZLE_FILTER=name=mgdm2oerebapplicationintegration-mgdm2oereb-service-1"
+      # - "DOZZLE_FILTER=name=shoereboereb-serverdeployment-webservice-1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - public
+    labels:
+      # make this service to be picked by traefik proxy
+      # - "traefik.enable=false"
+      - "traefik.enable=true"
+      - "traefik.docker.network=public"
+      - "traefik.http.routers.sh-housekeeping-log-gui.entrypoints=websecure"
+      - "traefik.http.routers.sh-housekeeping-log-gui.rule=Host(`logs.sh.opengis.ch`)"
+      - "traefik.http.routers.sh-housekeeping-log-gui.tls=true"
+      - "traefik.http.routers.sh-housekeeping-log-gui.tls.certresolver=production"
+      - "traefik.http.routers.sh-housekeeping-log-gui.service=sh-housekeeping-log-gui-service"
+      - "traefik.http.services.sh-housekeeping-log-gui-service.loadbalancer.server.port=8080"
+      # do not update automatically by watchtower
+      - "com.centurylinklabs.watchtower.enable=false"
+    command:
+    #   - "--username sh"
+    #   - "--password log-gui"
+      - "--filter=name=mgdm2oerebapplicationintegration-ilivalidator-service-1"
+      - "--filter=name=mgdm2oerebapplicationintegration-mgdm2oereb-service-1"
+      - "--filter=name=shoereboereb-serverdeployment-webservice-1"
+networks:
+  public:
+    external: true
